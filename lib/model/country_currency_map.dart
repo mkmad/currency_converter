@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:currency_converter/model/rates.dart';
+
 final country_currency_map =
     '{"Canada": "CAD", "Libyan Arab Jamahiriya": "LYD", "Turkmenistan": "TMT", "Saint Helena": "GBP", "Saint Pierre and Miquelon": "EUR", '
     '"Ethiopia": "ETB", "Swaziland": "SZL", "Svalbard and Jan Mayen Islands": "NOK", "Cameroon": "XAF", "Burkina Faso": "XOF", "Togo": "XOF", '
@@ -39,7 +41,26 @@ final country_currency_map =
     '"Montserrat": "XCD", "New Caledonia": "XPF", "Heard and Mc Donald Islands": "AUD", "Guyana": "GYD", "US Armed Forces": "USD", "Honduras": "HNL", "Egypt": "EGP", '
     '"Singapore": "SGD", "Antarctica": "AQD", "Sri Lanka": "LKR", "Comoros": "KMF"}';
 
-final parsedJson = json.decode(country_currency_map);
+var currency_symbol_map = '{"DZD": "\\u062f\\u062c", "QAR": "\\ufdfc", "XBT": "\\u0243", "BGN": "\\u043b\\u0432", "BMD": "\$", "PAB": "B/.", "BWP": "P", "TZS": "TSh", "VND": '
+    '"\\u20ab", "KYD": "\$", "UAH": "\\u20b4", "AWG": "\\u0192", "GIP": "\\u00a3", "BYR": "Br", "ALL": "L", "BYN": "Br", "DJF": "Fdj", "THB": "\\u0e3f", "BND": "\$", '
+    '"NIO": "C\$", "LAK": "\\u20ad", "SYP": "\\u00a3", "MAD": "MAD", "MZN": "MT", "YER": "\\ufdfc", "ZAR": "R", "NPR": "\\u20a8", "CRC": "\\u20a1", "AED": "\\u062f.\\u0625",'
+    ' "GBP": "\\u00a3", "HUF": "Ft", "LSL": "M", "TTD": "TT\$", "SBD": "\$", "KPW": "\\u20a9", "ANG": "\\u0192", "RWF": "R\\u20a3", "NOK": "kr", "MOP": "MOP\$", '
+    '"INR": "\\u20b9", "MXN": "\$", "TJS": "SM", "COP": "\$", "TMT": "T", "HNL": "L", "FJD": "\$", "ETB": "Br", "PEN": "S/.", "BZD": "BZ\$", "ILS": "\\u20aa", "ETH": "\\u039e", '
+    '"GGP": "\\u00a3", "MDL": "lei", "BSD": "\$", "TVD": "\$", "JEP": "\\u00a3", "AUD": "\$", "SRD": "\$", "KRW": "\\u20a9", "VEF": "Bs", "LTL": "Lt", "CDF": "FC", "RUB": "\\u20bd", '
+    '"MMK": "K", "PLN": "z\\u0142", "MKD": "\\u0434\\u0435\\u043d", "TOP": "T\$", "GNF": "FG", "WST": "WS\$", "ERN": "Nfk", "BAM": "KM", "CAD": "\$", "CVE": "\$", "PGK": "K", "SOS": '
+    '"S", "STD": "Db", "BTC": "\\u0e3f", "STN": "Db", "XPF": "\\u20a3", "XOF": "CFA", "NZD": "\$", "LVL": "Ls", "ARS": "\$", "RSD": "\\u0414\\u0438\\u043d.", "BHD": ".\\u062f.\\u0628", '
+    '"SDG": "\\u062c.\\u0633.", "NAD": "\$", "GHS": "GH\\u20b5", "EGP": "\\u00a3", "GHC": "\\u20b5", "BOB": "\$b", "DKK": "kr", "LBP": "\\u00a3", "AOA": "Kz", "KHR": "\\u17db", "MYR": '
+    '"RM", "LYD": "LD", "JOD": "JD", "SAR": "\\ufdfc", "HKD": "\$", "CHF": "CHF", "MRU": "UM", "SVC": "\$", "MRO": "UM", "HRK": "kn", "XAF": "FCFA", "VUV": "VT", "UYU": "\$U", "PYG": "Gs", '
+    '"NGN": "\\u20a6", "ZWD": "Z\$", "EEK": "kr", "MWK": "MK", "LKR": "\\u20a8", "DOP": "RD\$", "PKR": "\\u20a8", "SZL": "E", "MNT": "\\u20ae", "AMD": "\\u058f", "UGX": "USh", "IRR": "\\ufdfc", '
+    '"JMD": "J\$", "SCR": "\\u20a8", "SHP": "\\u00a3", "AFN": "\\u060b", "TRL": "\\u20a4", "TRY": "\\u20ba", "BDT": "\\u09f3", "HTG": "G", "MGA": "Ar", "PHP": "\\u20b1", "LRD": "\$", "XCD": "\$", '
+    '"SSP": "\\u00a3", "CZK": "K\\u010d", "TWD": "NT\$", "BTN": "Nu.", "MUR": "\\u20a8", "IDR": "Rp", "ISK": "kr", "RMB": "\\uffe5", "SEK": "kr", "CUP": "\\u20b1", "BBD": "\$", "KMF": "CF", "GMD": "D", '
+    '"IMP": "\\u00a3", "CUC": "\$", "GEL": "\\u20be", "CLP": "\$", "EUR": "\\u20ac", "KZT": "\\u043b\\u0432", "OMR": "\\ufdfc", "BRL": "R\$", "KES": "KSh", "USD": "\$", "AZN": "\\u20bc", "MVR": "Rf", '
+    '"IQD": "\\u0639.\\u062f", "GYD": "\$", "KWD": "KD", "BIF": "FBu", "SGD": "\$", "UZS": "\\u043b\\u0432", "CNY": "\\u00a5", "SLL": "Le", "TND": "\\u062f.\\u062a", '
+    '"FKP": "\\u00a3", "LTC": "\\u0141", "KGS": "\\u043b\\u0432", "RON": "lei", "GTQ": "Q", "JPY": "\\u00a5"}';
+
+final parsed_country_currency = json.decode(country_currency_map);
+final parsed_country_currency_symbol = json.decode(currency_symbol_map);
+
 
 final recent_countries = [
   "United States",
@@ -295,3 +316,5 @@ final countries = [
   'Sri Lanka',
   'Comoros'
 ];
+
+var ratesObject = new Rates();

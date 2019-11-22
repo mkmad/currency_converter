@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:currency_converter/model/country_currency_map.dart';
-import 'package:currency_converter/model/rates.dart';
+
 
 class DataSearch extends SearchDelegate<String>{
 
   final _recent_countries = recent_countries;
   final _countries = countries;
+  Function toSet;
 
-  var ratesObject = new Rates();
+  DataSearch({this.toSet});
 
   String _getImageName(String index) {
     return "assets/" + index + ".png";
@@ -51,9 +52,15 @@ class DataSearch extends SearchDelegate<String>{
 
     return ListView.builder(
         itemBuilder: (context, index) => ListTile(
-          onTap: () {},
+          onTap: () {
+            var _country = suggestion_list[index];
+            var _currency = parsed_country_currency[suggestion_list[index]];
+            var _symbol = parsed_country_currency_symbol[_currency];
+            var _image = _getImageName(parsed_country_currency[suggestion_list[index]]);
+            toSet(_country, _currency, _symbol, _image);
+            close(context, null);},
           leading: Image(image: new AssetImage(
-              _getImageName(parsedJson[suggestion_list[index]])),
+              _getImageName(parsed_country_currency[suggestion_list[index]])),
               width: 25.0,
               height: 25.0),
           title: RichText(
