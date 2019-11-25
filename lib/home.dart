@@ -3,6 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'dart:convert' as convert;
+import 'package:flip_card/flip_card.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
+import 'charts_helper.dart';
 
 
 // Create a custom stateful widget
@@ -43,9 +46,16 @@ class CustomState extends State<Home> {
   var top_margin = 300.0;
   var container_height = 320.0;
 
+  var start_at = "";
+  var end_at = "";
+
   var api_endpoint = "https://api.exchangeratesapi.io/latest?symbols=";
+  var historical_api_endpoint = "https://api.exchangeratesapi.io/history?";
 
   var hideContainer = true;
+  bool fetching_results = false;
+  List<charts.Series<TimeSeriesSales, DateTime>> chart_data;
+  GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
 
   String resp;
 
@@ -71,6 +81,38 @@ class CustomState extends State<Home> {
     // TODO convert json to object...
 
     return jsonResponse;
+  }
+
+  Future<Map<String,dynamic>> _makeGetHistoricalRequest(String sym1, String sym2, String start, String end) async {
+    // make GET request
+    String url = historical_api_endpoint + "start_at=" + start + ";end_at=" + end + ";symbols=" + sym2 + ";base=" + sym1;
+    print(url);
+    Response response = await get(url);
+    var jsonResponse = convert.jsonDecode(response.body);
+    print(jsonResponse['rates']);
+    List<TimeSeriesSales> values = new List<TimeSeriesSales>();
+    jsonResponse['rates'].forEach((key, value) =>
+      values.add(new TimeSeriesSales(DateTime.parse(key), value[sym2]))
+    );
+
+    setState(() {
+      chart_data = createData(data: values);
+      fetching_results = false;
+    });
+    print(jsonResponse);
+
+  }
+
+  static List<charts.Series<TimeSeriesSales, DateTime>> createData({data}) {
+    return [
+      new charts.Series<TimeSeriesSales, DateTime>(
+        id: 'Sales',
+        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        domainFn: (TimeSeriesSales sales, _) => sales.time,
+        measureFn: (TimeSeriesSales sales, _) => sales.sales,
+        data: data,
+      )
+    ];
   }
 
   void hide_container(bool val){
@@ -100,28 +142,29 @@ class CustomState extends State<Home> {
 
   Widget _buildAppBar() {
     return new AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.lightBlueAccent,
         elevation: 0.0,
-        title: new FlutterLogo(
-          size: 30.0,
-          colors: Colors.green,
-        ),
-        centerTitle: true,
-        // The action widgets are the right icons in the appBar
-        leading: new IconButton(
-            icon: new Icon(
-              Icons.account_circle,
-              color: Colors.greenAccent,
-            ),
-            onPressed: () => debugPrint("account pressed")),
-        actions: <Widget>[
-          new IconButton(
-              icon: new Icon(
-                Icons.message,
-                color: Colors.greenAccent,
-              ),
-              onPressed: () => debugPrint("Send icon Tapped!")),
-        ]);
+//        title: new FlutterLogo(
+//          size: 30.0,
+//          colors: Colors.green,
+//        ),
+//        centerTitle: true,
+//        // The action widgets are the right icons in the appBar
+//        leading: new IconButton(
+//            icon: new Icon(
+//              Icons.account_circle,
+//              color: Colors.greenAccent,
+//            ),
+//            onPressed: () => debugPrint("account pressed")),
+//        actions: <Widget>[
+//          new IconButton(
+//              icon: new Icon(
+//                Icons.message,
+//                color: Colors.greenAccent,
+//              ),
+//              onPressed: () => debugPrint("Send icon Tapped!")),
+//        ]
+    );
   }
 
   // build body
@@ -157,9 +200,14 @@ class CustomState extends State<Home> {
               )
           ),
         ),
+
         Center(
 
-          child: AnimatedContainer(
+    child: FlipCard(
+        direction: FlipDirection.HORIZONTAL, // default
+        key: cardKey,
+        flipOnTouch: false,
+        front: AnimatedContainer(
             duration: Duration(seconds: 1),
             width: MediaQuery.of(context).size.width - 20,
             height: this.container_height,
@@ -276,10 +324,13 @@ class CustomState extends State<Home> {
                       onPressed: () async {
                         setState(() {
                           resp = "";
+                          fetching_results = true;
                         });
                         _makeGetRequest(cur_one, cur_two);
+                        _makeGetHistoricalRequest(cur_one, cur_two, "2018-01-01", "2019-01-01");
                         resizeContainer(200.0, 400.0);
                         hide_container(false);
+
 
                       },//since this is only a UI app
                       child: Text('Convert',
@@ -301,23 +352,92 @@ class CustomState extends State<Home> {
                   ),
                   hideContainer ? Container() : Container(
                     padding: const EdgeInsets.only(top: 20.0),
-                    child: Container(
-                      padding: EdgeInsets.only(top: 15.0),
-                      child: Text(resp != "" ? resp : "Failed to fetch results",
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontFamily: 'SFUIDisplay',
-                          fontWeight: FontWeight.bold,
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          padding: EdgeInsets.only(top: 15.0),
+                          child: Text(resp != "" ? resp : "Failed to fetch results",
+                            style: TextStyle(
+                              fontSize: 25,
+                              fontFamily: 'SFUIDisplay',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                        Container(
+                          padding: const EdgeInsets.only(left: 27.0),
+                        ),
+                        Align(
+                            alignment: Alignment.bottomRight,
+                            child: MaterialButton(
+                              onPressed: () => cardKey.currentState.toggleCard(),//since this is only a UI app
+                              child: Text("Details",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontFamily: 'SFUIDisplay',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              color: Color(0xffff2d55),
+                              elevation: 0,
+                              minWidth: 50,
+                              height: 50,
+                              textColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)
+                              ),
+                            ),
+                        ),
+                      ],
+                    )
                   )
 
                 ],
               ),
             ),
-          )
-    )
+          ),
+      back: Container(
+        child: AnimatedContainer(
+          duration: Duration(seconds: 1),
+          width: MediaQuery.of(context).size.width - 20,
+          height: this.container_height,
+          margin: EdgeInsets.only(top: this.top_margin),
+          decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          ),
+          child: hideContainer ? Container() :Column(
+            children: <Widget>[
+              Container(
+                width: 200,
+                height: 200,
+                child: fetching_results ? CircularProgressIndicator() : SimpleTimeSeriesChart(chart_data, animate: false),
+              ),
+
+              MaterialButton(
+                onPressed: () => cardKey.currentState.toggleCard(),//since this is only a UI app
+                child: Text("back",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontFamily: 'SFUIDisplay',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                color: Color(0xffff2d55),
+                elevation: 0,
+                minWidth: 50,
+                height: 50,
+                textColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)
+                ),
+              ),
+              ],
+            )
+              ),
+            )
+          ),
+        )
       ],
     );
   }
