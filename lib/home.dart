@@ -46,8 +46,9 @@ class CustomState extends State<Home> {
   var top_margin = 300.0;
   var container_height = 320.0;
 
-  var start_at = "";
-  var end_at = "";
+  // 5 years range
+  var start_at = "2015-01-01";
+  var end_at = "2019-11-01";
 
   var api_endpoint = "https://api.exchangeratesapi.io/latest?symbols=";
   var historical_api_endpoint = "https://api.exchangeratesapi.io/history?";
@@ -169,10 +170,6 @@ class CustomState extends State<Home> {
 
   // build body
   Widget _buildBody() {
-    // AnchoredOverlay creates a child and an overlay
-    // The overlay widget can move over freely above
-    // the child. Here the overlay widget is a CenterAbout
-    // which centers its child at a given position
     return _layout();
   }
 
@@ -208,7 +205,7 @@ class CustomState extends State<Home> {
         key: cardKey,
         flipOnTouch: false,
         front: AnimatedContainer(
-            duration: Duration(seconds: 1),
+            duration: Duration(milliseconds: 250),
             width: MediaQuery.of(context).size.width - 20,
             height: this.container_height,
             margin: EdgeInsets.only(top: this.top_margin),
@@ -224,7 +221,7 @@ class CustomState extends State<Home> {
                       text: TextSpan(
                           text: "Enter Currency",
                           style: TextStyle(
-                              color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18.0),
+                              color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20.0),
                       )
                   ),
                   Padding(
@@ -327,7 +324,7 @@ class CustomState extends State<Home> {
                           fetching_results = true;
                         });
                         _makeGetRequest(cur_one, cur_two);
-                        _makeGetHistoricalRequest(cur_one, cur_two, "2018-01-01", "2019-01-01");
+                        _makeGetHistoricalRequest(cur_one, cur_two, start_at, end_at);
                         resizeContainer(200.0, 400.0);
                         hide_container(false);
 
@@ -365,12 +362,12 @@ class CustomState extends State<Home> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.only(left: 27.0),
+                          padding: const EdgeInsets.only(right: 20.0),
                         ),
                         Align(
                             alignment: Alignment.bottomRight,
-                            child: MaterialButton(
-                              onPressed: () => cardKey.currentState.toggleCard(),//since this is only a UI app
+                            child: resp != "" ? MaterialButton(
+                              onPressed: () => cardKey.currentState.toggleCard(),
                               child: Text("Details",
                                 style: TextStyle(
                                   fontSize: 15,
@@ -386,7 +383,7 @@ class CustomState extends State<Home> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)
                               ),
-                            ),
+                            ) : null,
                         ),
                       ],
                     )
@@ -398,7 +395,7 @@ class CustomState extends State<Home> {
           ),
       back: Container(
         child: AnimatedContainer(
-          duration: Duration(seconds: 1),
+          duration: Duration(milliseconds: 250),
           width: MediaQuery.of(context).size.width - 20,
           height: this.container_height,
           margin: EdgeInsets.only(top: this.top_margin),
@@ -409,9 +406,26 @@ class CustomState extends State<Home> {
           child: hideContainer ? Container() :Column(
             children: <Widget>[
               Container(
-                width: 200,
-                height: 200,
-                child: fetching_results ? CircularProgressIndicator() : SimpleTimeSeriesChart(chart_data, animate: false),
+                width: MediaQuery.of(context).size.width - 10,
+                height: 300,
+                child: fetching_results ? CircularProgressIndicator() : SimpleTimeSeriesChart(chart_data, animate: true),
+              ),
+
+              Container(
+                height: 5,
+              ),
+
+              Text("Historical prices",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontFamily: 'SFUIDisplay',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+
+              Container(
+                height: 15,
               ),
 
               MaterialButton(
@@ -425,7 +439,7 @@ class CustomState extends State<Home> {
                 ),
                 color: Color(0xffff2d55),
                 elevation: 0,
-                minWidth: 50,
+                minWidth: 150,
                 height: 50,
                 textColor: Colors.white,
                 shape: RoundedRectangleBorder(
